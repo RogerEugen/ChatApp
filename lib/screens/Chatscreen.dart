@@ -28,10 +28,13 @@ class _ChatScreenState extends State<ChatScreen> {
   String otherUserId = '';
   String otherUserEmail = '';
 
+  late bool isNewChat; // ✅ local mutable state
+
   @override
   void initState() {
     super.initState();
-    if (!widget.isNewChat) {
+    isNewChat = widget.isNewChat; // initialize local state
+    if (!isNewChat) {
       otherUserId = widget.otherUserId;
       otherUserEmail = widget.otherUserName;
     }
@@ -39,9 +42,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _sendMessage() async {
     String receiverId = otherUserId;
-    if (widget.isNewChat) {
+
+    if (isNewChat) {
       final email = _emailController.text.trim();
-      if (email.isEmpty || _messageController.text.trim().isEmpty) return;
+      final message = _messageController.text.trim();
+      if (email.isEmpty || message.isEmpty) return;
 
       // Find user by email
       final query = await _firestore
@@ -59,8 +64,14 @@ class _ChatScreenState extends State<ChatScreen> {
       receiverId = query.docs.first.id;
       otherUserId = receiverId;
       otherUserEmail = email;
+
+      // Mark as existing chat now
+      setState(() {
+        isNewChat = false;
+      });
     }
 
+    // Send message
     await _firestore.collection('messages').add({
       'senderId': userId,
       'receiverId': receiverId,
@@ -69,16 +80,13 @@ class _ChatScreenState extends State<ChatScreen> {
     });
 
     _messageController.clear();
-    setState(() {
-      widget.isNewChat = false;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: widget.isNewChat
+        title: isNewChat
             ? TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(
@@ -93,7 +101,7 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
                   .collection('messages')
-                  .where('senderId', whereIn: [userId, otherUserId])
+                  .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -117,18 +125,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   reverse: true,
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
-                    final message = messages[messages.length - 1 - index];
+                    final message = messages[index];
                     final isMe = message['senderId'] == userId;
 
-                    return ListTile(
-                      title: Align(
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 4.0, horizontal: 8.0),
+                      child: Align(
                         alignment:
                             isMe ? Alignment.centerRight : Alignment.centerLeft,
                         child: Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: isMe ? Colors.blue : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(10),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
                             message['message'],
