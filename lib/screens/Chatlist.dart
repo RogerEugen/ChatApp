@@ -8,31 +8,48 @@ class ChatList extends StatefulWidget {
   const ChatList({super.key});
 
   @override
-  _ChatListState createState() => _ChatListState();
+  State<ChatList> createState() => _ChatListState();
 }
 
 class _ChatListState extends State<ChatList> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
 
-  String get userId => _auth.currentUser?.uid ?? '';
+  String get userId => _auth.currentUser!.uid;
+
+  Map<String, String> emailCache = {};
+
+  Future<String> _getUserEmail(String uid) async {
+    if (emailCache.containsKey(uid)) {
+      return emailCache[uid]!;
+    }
+
+    final doc = await _firestore.collection('users').doc(uid).get();
+
+    if (doc.exists) {
+      final email = doc.data()?['email'] ?? uid;
+      emailCache[uid] = email;
+      return email;
+    }
+
+    return uid;
+  }
 
   Future<void> _signOut() async {
     await _auth.signOut();
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => const Login()),
+      MaterialPageRoute(builder: (_) => const Login()),
     );
   }
 
-  // Open ChatScreen for a new chat
   void _startNewChat() {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ChatScreen(
+        builder: (_) => const ChatScreen(
           otherUserId: '',
-          otherUserName: '',
+          otherUserEmail: '',
           isNewChat: true,
         ),
       ),
@@ -43,67 +60,82 @@ class _ChatListState extends State<ChatList> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Chat List'),
+        title: const Text('Chats'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.exit_to_app),
-            onPressed: _signOut,
-          ),
+          IconButton(icon: const Icon(Icons.logout), onPressed: _signOut),
         ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
             .collection('messages')
-            .where('senderId', isEqualTo: userId)
+            .where('participants', arrayContains: userId)
             .snapshots(),
         builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
+          final messages = snapshot.data!.docs;
+
+          if (messages.isEmpty) {
+            return const Center(child: Text('No chats yet'));
           }
 
-          final messages = snapshot.data?.docs ?? [];
+          messages.sort((a, b) {
+            final aTime = a['timestamp'];
+            final bTime = b['timestamp'];
+            if (aTime == null || bTime == null) return 0;
+            return bTime.compareTo(aTime);
+          });
 
-          // Extract unique receiver IDs
-          final uniqueReceiverIds = messages
-              .map((message) => message['receiverId'])
-              .toSet()
-              .toList();
+          final Map<String, QueryDocumentSnapshot> latestChats = {};
 
-          if (uniqueReceiverIds.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Text('No chats yet!'),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _startNewChat,
-                    child: const Text('Start a new chat'),
-                  ),
-                ],
-              ),
-            );
+          for (var msg in messages) {
+            final participants = List<String>.from(msg['participants']);
+            final otherUser =
+                participants.firstWhere((id) => id != userId);
+
+            if (!latestChats.containsKey(otherUser)) {
+              latestChats[otherUser] = msg;
+            }
           }
+
+          final otherUserIds = latestChats.keys.toList();
 
           return ListView.builder(
-            itemCount: uniqueReceiverIds.length,
+            itemCount: otherUserIds.length,
             itemBuilder: (context, index) {
-              final receiverId = uniqueReceiverIds[index];
-              return ListTile(
-                title: Text('Chat with $receiverId'),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ChatScreen(
-                        otherUserId: receiverId,
-                        otherUserName: receiverId,
-                      ),
-                    ),
+              final otherId = otherUserIds[index];
+              final latestMessage = latestChats[otherId]!['text'];
+
+              return FutureBuilder<String>(
+                future: _getUserEmail(otherId),
+                builder: (context, emailSnapshot) {
+                  if (!emailSnapshot.hasData) {
+                    return const ListTile(
+                      title: Text('Loading...'),
+                    );
+                  }
+
+                  final email = emailSnapshot.data!;
+
+                  return ListTile(
+                    leading: const CircleAvatar(
+                        child: Icon(Icons.person)),
+                    title: Text(email),
+                    subtitle: Text(latestMessage),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ChatScreen(
+                            otherUserId: otherId,
+                            otherUserEmail: email,
+                            isNewChat: false,
+                          ),
+                        ),
+                      );
+                    },
                   );
                 },
               );
