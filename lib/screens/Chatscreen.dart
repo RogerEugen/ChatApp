@@ -4,18 +4,18 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
-  final String otherUserName;
-  final bool isNewChat; // if true, user will input email
+  final String otherUserEmail;
+  final bool isNewChat;
 
   const ChatScreen({
     super.key,
     required this.otherUserId,
-    required this.otherUserName,
+    required this.otherUserEmail,
     this.isNewChat = false,
   });
 
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -24,62 +24,87 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _emailController = TextEditingController();
 
-  String get userId => _auth.currentUser?.uid ?? '';
-  String otherUserId = '';
-  String otherUserEmail = '';
+  String get myId => _auth.currentUser!.uid;
 
-  late bool isNewChat; // ✅ local mutable state
+  late String otherUserId;
+  late String otherUserEmail;
+  late bool isNewChat;
 
   @override
   void initState() {
     super.initState();
-    isNewChat = widget.isNewChat; // initialize local state
-    if (!isNewChat) {
-      otherUserId = widget.otherUserId;
-      otherUserEmail = widget.otherUserName;
-    }
+    otherUserId = widget.otherUserId;
+    otherUserEmail = widget.otherUserEmail;
+    isNewChat = widget.isNewChat;
   }
 
   Future<void> _sendMessage() async {
-    String receiverId = otherUserId;
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
 
-    if (isNewChat) {
-      final email = _emailController.text.trim();
-      final message = _messageController.text.trim();
-      if (email.isEmpty || message.isEmpty) return;
+    String targetUserId = otherUserId;
+    String targetEmail = otherUserEmail;
 
-      // Find user by email
-      final query = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
+    try {
+      if (isNewChat) {
+        final email = _emailController.text.trim();
+        if (email.isEmpty) return;
 
-      if (query.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not found')),
+        final userQuery = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .limit(1)
+            .get();
+
+        if (userQuery.docs.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not found')),
+          );
+          return;
+        }
+
+        targetUserId = userQuery.docs.first.id;
+        targetEmail = email;
+
+        await _firestore.collection('messages').add({
+          'senderId': myId,
+          'receiverId': targetUserId,
+          'text': text,
+          'timestamp': FieldValue.serverTimestamp(),
+          'participants': [myId, targetUserId],
+        });
+
+        _messageController.clear();
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              otherUserId: targetUserId,
+              otherUserEmail: targetEmail,
+              isNewChat: false,
+            ),
+          ),
         );
+
         return;
       }
 
-      receiverId = query.docs.first.id;
-      otherUserId = receiverId;
-      otherUserEmail = email;
-
-      // Mark as existing chat now
-      setState(() {
-        isNewChat = false;
+      // Normal chat
+      await _firestore.collection('messages').add({
+        'senderId': myId,
+        'receiverId': targetUserId,
+        'text': text,
+        'timestamp': FieldValue.serverTimestamp(),
+        'participants': [myId, targetUserId],
       });
+
+      _messageController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error sending message: $e')),
+      );
     }
-
-    // Send message
-    await _firestore.collection('messages').add({
-      'senderId': userId,
-      'receiverId': receiverId,
-      'message': _messageController.text.trim(),
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    _messageController.clear();
   }
 
   @override
@@ -90,8 +115,9 @@ class _ChatScreenState extends State<ChatScreen> {
             ? TextField(
                 controller: _emailController,
                 decoration: const InputDecoration(
-                  hintText: 'Enter user email',
+                  hintText: 'Enter user email to start chat',
                 ),
+                keyboardType: TextInputType.emailAddress,
               )
             : Text(otherUserEmail),
       ),
@@ -101,50 +127,56 @@ class _ChatScreenState extends State<ChatScreen> {
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
                   .collection('messages')
-                  .orderBy('timestamp', descending: true)
-                  .snapshots(),
+                  .where('participants', arrayContains: myId)
+                  .snapshots(), // 🔥 removed orderBy
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final messages = snapshot.data?.docs
-                        .where((doc) =>
-                            (doc['senderId'] == userId &&
-                                doc['receiverId'] == otherUserId) ||
-                            (doc['senderId'] == otherUserId &&
-                                doc['receiverId'] == userId))
-                        .toList() ??
-                    [];
+                var docs = snapshot.data!.docs
+                    .where((doc) =>
+                        (doc['participants'] as List).contains(otherUserId))
+                    .toList();
 
-                if (messages.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
+                if (docs.isEmpty) {
+                  return const Center(child: Text('No messages yet'));
                 }
 
-                return ListView.builder(
-                  reverse: true,
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message['senderId'] == userId;
+                // 🔥 Safe sort (newest last)
+                docs.sort((a, b) {
+                  final aTime = a['timestamp'];
+                  final bTime = b['timestamp'];
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 4.0, horizontal: 8.0),
-                      child: Align(
-                        alignment:
-                            isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isMe ? Colors.blue : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            message['message'],
-                            style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black,
-                            ),
+                  if (aTime == null || bTime == null) return 0;
+                  return aTime.compareTo(bTime);
+                });
+
+                return ListView.builder(
+                  reverse: true, // 🔥 chat style
+                  padding: const EdgeInsets.all(8),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final doc = docs[docs.length - 1 - index];
+                    final isMe = doc['senderId'] == myId;
+
+                    return Align(
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 4),
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color:
+                              isMe ? Colors.blue : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          doc['text'] ?? '',
+                          style: TextStyle(
+                            color:
+                                isMe ? Colors.white : Colors.black,
                           ),
                         ),
                       ),
@@ -154,15 +186,16 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          SafeArea(
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
                     decoration: const InputDecoration(
-                      hintText: 'Enter message...',
+                      hintText: 'Type your message',
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 12),
                     ),
                   ),
                 ),
