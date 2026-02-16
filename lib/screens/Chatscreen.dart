@@ -5,7 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
   final String otherUserName;
-  final bool isNewChat; // if true, user will input email
+  final bool isNewChat;
 
   const ChatScreen({
     super.key,
@@ -28,12 +28,12 @@ class _ChatScreenState extends State<ChatScreen> {
   String otherUserId = '';
   String otherUserEmail = '';
 
-  late bool isNewChat; // ✅ local mutable state
+  late bool isNewChat;
 
   @override
   void initState() {
     super.initState();
-    isNewChat = widget.isNewChat; // initialize local state
+    isNewChat = widget.isNewChat;
     if (!isNewChat) {
       otherUserId = widget.otherUserId;
       otherUserEmail = widget.otherUserName;
@@ -48,7 +48,6 @@ class _ChatScreenState extends State<ChatScreen> {
       final message = _messageController.text.trim();
       if (email.isEmpty || message.isEmpty) return;
 
-      // Find user by email
       final query = await _firestore
           .collection('users')
           .where('email', isEqualTo: email)
@@ -65,13 +64,11 @@ class _ChatScreenState extends State<ChatScreen> {
       otherUserId = receiverId;
       otherUserEmail = email;
 
-      // Mark as existing chat now
       setState(() {
         isNewChat = false;
       });
     }
 
-    // Send message
     await _firestore.collection('messages').add({
       'senderId': userId,
       'receiverId': receiverId,
@@ -85,18 +82,46 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFFDECEF),
       appBar: AppBar(
+        elevation: 0,
+        backgroundColor: const Color(0xFFFDECEF),
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.black),
         title: isNewChat
-            ? TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter user email',
+            ? Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: TextField(
+                  controller: _emailController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter user email',
+                    border: InputBorder.none,
+                  ),
                 ),
               )
-            : Text(otherUserEmail),
+            : Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.pinkAccent,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    otherUserEmail,
+                    style: const TextStyle(
+                        color: Colors.black, fontSize: 14),
+                  ),
+                ],
+              ),
       ),
       body: Column(
         children: [
+          /// Messages Area
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
@@ -104,47 +129,62 @@ class _ChatScreenState extends State<ChatScreen> {
                   .orderBy('timestamp', descending: true)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (!snapshot.hasData) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
-                final messages = snapshot.data?.docs
-                        .where((doc) =>
-                            (doc['senderId'] == userId &&
-                                doc['receiverId'] == otherUserId) ||
-                            (doc['senderId'] == otherUserId &&
-                                doc['receiverId'] == userId))
-                        .toList() ??
-                    [];
-
-                if (messages.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
-                }
+                final messages = snapshot.data!.docs
+                    .where((doc) =>
+                        (doc['senderId'] == userId &&
+                            doc['receiverId'] == otherUserId) ||
+                        (doc['senderId'] == otherUserId &&
+                            doc['receiverId'] == userId))
+                    .toList();
 
                 return ListView.builder(
                   reverse: true,
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 12, vertical: 10),
                   itemCount: messages.length,
                   itemBuilder: (context, index) {
                     final message = messages[index];
                     final isMe = message['senderId'] == userId;
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 4.0, horizontal: 8.0),
-                      child: Align(
-                        alignment:
-                            isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isMe ? Colors.blue : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
+                    return Align(
+                      alignment: isMe
+                          ? Alignment.centerRight
+                          : Alignment.centerLeft,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        constraints: BoxConstraints(
+                          maxWidth:
+                              MediaQuery.of(context).size.width * 0.75,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isMe
+                              ? Colors.pinkAccent
+                              : Colors.white,
+                          borderRadius: BorderRadius.only(
+                            topLeft: const Radius.circular(20),
+                            topRight: const Radius.circular(20),
+                            bottomLeft: Radius.circular(isMe ? 20 : 0),
+                            bottomRight: Radius.circular(isMe ? 0 : 20),
                           ),
-                          child: Text(
-                            message['message'],
-                            style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black,
-                            ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black12,
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            )
+                          ],
+                        ),
+                        child: Text(
+                          message['message'],
+                          style: TextStyle(
+                            color:
+                                isMe ? Colors.white : Colors.black87,
                           ),
                         ),
                       ),
@@ -154,25 +194,47 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+
+          /// Message Input Area
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 12, vertical: 8),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.vertical(
+                top: Radius.circular(25),
+              ),
+            ),
             child: Row(
               children: [
                 Expanded(
                   child: TextField(
                     controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter message...',
+                    decoration: InputDecoration(
+                      hintText: "Type a message...",
+                      filled: true,
+                      fillColor: const Color(0xFFFDECEF),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(25),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
-                ),
+                const SizedBox(width: 8),
+                CircleAvatar(
+                  radius: 22,
+                  backgroundColor: Colors.pinkAccent,
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
+                )
               ],
             ),
-          ),
+          )
         ],
       ),
     );
