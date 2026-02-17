@@ -63,7 +63,7 @@ class _LoginState extends State<Login> {
                   "Login",
                   style: TextStyle(
                     fontSize: 32,
-                    color: Colors.white,
+                    color: Color.fromARGB(255, 252, 252, 252),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -147,7 +147,7 @@ class _LoginState extends State<Login> {
                     child: Ink(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                          colors: [Color.fromARGB(255, 111, 56, 159), Color(0xFF4A00E0)],
                         ),
                         borderRadius: BorderRadius.circular(30),
                       ),
