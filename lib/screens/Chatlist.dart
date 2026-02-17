@@ -5,7 +5,6 @@ import 'package:intl/intl.dart'; // Ensure this is in your pubspec.yaml
 import '../Login.dart';
 import 'Chatscreen.dart';
 import 'Contact.dart';
-import '../notification_service.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({super.key});
