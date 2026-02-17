@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Add this to your pubspec.yaml for time formatting
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
