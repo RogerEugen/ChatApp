@@ -1,83 +1,203 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // Add this
-import 'screens/Chatlist.dart'; // Adjust import
-import 'Login.dart';
+  import 'package:flutter/material.dart';
+  import 'package:firebase_auth/firebase_auth.dart';
+  import 'package:cloud_firestore/cloud_firestore.dart'; // Add this
+  import 'screens/Chatlist.dart'; // Adjust import
+  import 'Login.dart';
 
-class Register extends StatefulWidget {
-  const Register({super.key});
+  class Register extends StatefulWidget {
+    const Register({super.key});
 
-  @override
-  _RegisterState createState() => _RegisterState();
-}
-
-class _RegisterState extends State<Register> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance; // ✅ Add this
-
-  // Handle user registration
-  Future<void> _register() async {
-    try {
-      // Create user with Firebase Authentication
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      // Save user info to Firestore (e.g., email)
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'email': _emailController.text.trim(), // Store the email
-        'uid': userCredential.user!.uid,        // Store the user ID
-      });
-
-      // Redirect to the ChatList page after successful registration
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const ChatList()),
-      );
-    } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to register: $e')),
-      );
-    }
+    @override
+    _RegisterState createState() => _RegisterState();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Register')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+  class _RegisterState extends State<Register> {
+    final _emailController = TextEditingController();
+    final _passwordController = TextEditingController();
+    final _auth = FirebaseAuth.instance;
+    final _firestore = FirebaseFirestore.instance; // ✅ Add this
+
+    // Handle user registration
+    Future<void> _register() async {
+      try {
+        // Create user with Firebase Authentication
+        UserCredential userCredential = await _auth
+            .createUserWithEmailAndPassword(
+          email: _emailController.text.trim(),
+          password: _passwordController.text.trim(),
+        );
+
+        // Save user info to Firestore (e.g., email)
+        await _firestore.collection('users').doc(userCredential.user!.uid).set({
+          'email': _emailController.text.trim(), // Store the email
+          'uid': userCredential.user!.uid,        // Store the user ID
+        });
+
+        // Redirect to the ChatList page after successful registration
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const ChatList()),
+        );
+      } catch (e) {
+        print("Error: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to register: $e')),
+        );
+      }
+    }
+
+    @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFF5F5F5),
+    body: SafeArea(
+      child: SingleChildScrollView(
         child: Column(
           children: [
-            TextField(
-              controller: _emailController,
-              decoration: const InputDecoration(labelText: 'Email'),
+
+            // 🔵 Top Gradient Design
+            Container(
+              height: 250,
+              width: double.infinity,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.only(
+                  bottomLeft: Radius.circular(80),
+                ),
+              ),
+              padding: const EdgeInsets.only(left: 24, top: 60),
+              alignment: Alignment.topLeft,
+              child: const Text(
+                "Register",
+                style: TextStyle(
+                  fontSize: 32,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
-            TextField(
-              controller: _passwordController,
-              decoration: const InputDecoration(labelText: 'Password'),
-              obscureText: true,
+
+            const SizedBox(height: 40),
+
+            // 📧 Email Field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _emailController,
+                decoration: InputDecoration(
+                  hintText: "Email",
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: const BorderSide(color: Colors.purple),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: const BorderSide(color: Colors.purple),
+                  ),
+                ),
+              ),
             ),
+
             const SizedBox(height: 20),
-            ElevatedButton(onPressed: _register, child: const Text('Register')),
-            TextButton(
-              onPressed: () {
-                // Navigate to Login screen
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const Login()),
-                );
-              },
-              child: const Text('Already have an account? Login'),
+
+            // 🔐 Password Field
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: InputDecoration(
+                  hintText: "Password",
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(30),
+                    borderSide: BorderSide.none,
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // 🔵 Register Button
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: SizedBox(
+                width: double.infinity,
+                height: 50,
+                child: ElevatedButton(
+                  onPressed: _register,
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    padding: EdgeInsets.zero,
+                  ),
+                  child: Ink(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF8E2DE2),
+                          Color(0xFF4A00E0)
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        "Register",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 40),
+
+            // 🔵 Bottom Login Section
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Text("Already have an account? "),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => const Login()),
+                    );
+                  },
+                  child: const Text(
+                    "Login >",
+                    style: TextStyle(
+                      color: Colors.purple,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                )
+              ],
             ),
           ],
         ),
       ),
-    );
-  }
+    ),
+  );
 }
+
+  }
