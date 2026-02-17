@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart'; // Add this to your pubspec.yaml for time formatting
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
@@ -38,34 +39,27 @@ class _ChatScreenState extends State<ChatScreen> {
     isNewChat = widget.isNewChat;
   }
 
+  // --- BACKEND LOGIC (UNTOUCHED) ---
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
-
     String targetUserId = otherUserId;
     String targetEmail = otherUserEmail;
-
     try {
       if (isNewChat) {
         final email = _emailController.text.trim();
         if (email.isEmpty) return;
-
         final userQuery = await _firestore
             .collection('users')
             .where('email', isEqualTo: email)
             .limit(1)
             .get();
-
         if (userQuery.docs.isEmpty) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(const SnackBar(content: Text('User not found')));
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not found')));
           return;
         }
-
         targetUserId = userQuery.docs.first.id;
         targetEmail = email;
-
         await _firestore.collection('messages').add({
           'senderId': myId,
           'receiverId': targetUserId,
@@ -73,9 +67,7 @@ class _ChatScreenState extends State<ChatScreen> {
           'timestamp': FieldValue.serverTimestamp(),
           'participants': [myId, targetUserId],
         });
-
         _messageController.clear();
-
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
@@ -86,11 +78,8 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
         );
-
         return;
       }
-
-      // Normal chat
       await _firestore.collection('messages').add({
         'senderId': myId,
         'receiverId': targetUserId,
@@ -98,33 +87,62 @@ class _ChatScreenState extends State<ChatScreen> {
         'timestamp': FieldValue.serverTimestamp(),
         'participants': [myId, targetUserId],
       });
-
       _messageController.clear();
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
     }
   }
 
+  // --- UI UPDATES START HERE ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF3F3F3),
+      backgroundColor: Colors.white,
       appBar: AppBar(
+        backgroundColor: Colors.white,
         elevation: 0,
-        backgroundColor: Colors.transparent,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-            ),
-          ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Text(otherUserEmail),
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=james'), // Placeholder
+              radius: 20,
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  otherUserEmail.split('@')[0], // Display name part of email
+                  style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+                const Text(
+                  "Active 2hrs ago",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(icon: const Icon(Icons.videocam_outlined, color: Colors.black), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.phone_outlined, color: Colors.black), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.more_vert, color: Colors.black), onPressed: () {}),
+        ],
       ),
       body: Column(
         children: [
+          if (isNewChat)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Enter recipient email', border: OutlineInputBorder()),
+              ),
+            ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
@@ -132,85 +150,111 @@ class _ChatScreenState extends State<ChatScreen> {
                   .where('participants', arrayContains: myId)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
                 var docs = snapshot.data!.docs
-                    .where(
-                      (doc) =>
-                          (doc['participants'] as List).contains(otherUserId),
-                    )
+                    .where((doc) => (doc['participants'] as List).contains(otherUserId))
                     .toList();
 
                 docs.sort((a, b) {
-                  final aTime = a['timestamp'];
-                  final bTime = b['timestamp'];
+                  final aTime = a['timestamp'] as Timestamp?;
+                  final bTime = b['timestamp'] as Timestamp?;
                   if (aTime == null || bTime == null) return 0;
                   return aTime.compareTo(bTime);
                 });
 
                 return ListView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final doc = docs[index];
                     final isMe = doc['senderId'] == myId;
+                    final timestamp = doc['timestamp'] as Timestamp?;
+                    final timeString = timestamp != null 
+                        ? DateFormat('hh:mm a').format(timestamp.toDate()) 
+                        : '';
 
-                    return Align(
-                      alignment: isMe
-                          ? Alignment.centerRight
-                          : Alignment.centerLeft,
-                      child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(14),
-                        constraints: const BoxConstraints(maxWidth: 260),
-                        decoration: BoxDecoration(
-                          color: isMe ? const Color(0xFF8E2DE2) : Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: const [
-                            BoxShadow(color: Colors.black12, blurRadius: 4),
+                    return Column(
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        if (!isMe) ...[
+                          Text(otherUserEmail.split('@')[0], style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                        ],
+                        Row(
+                          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!isMe) 
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8),
+                                child: CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=james')),
+                              ),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isMe ? const Color(0xFF1E88E5) : const Color(0xFFF5F5F5),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(20),
+                                    topRight: const Radius.circular(20),
+                                    bottomLeft: Radius.circular(isMe ? 20 : 0),
+                                    bottomRight: Radius.circular(isMe ? 0 : 20),
+                                  ),
+                                ),
+                                child: Text(
+                                  doc['text'] ?? '',
+                                  style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
-                        child: Text(
-                          doc['text'] ?? '',
-                          style: TextStyle(
-                            color: isMe ? Colors.white : Colors.black,
-                          ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(timeString, style: const TextStyle(fontSize: 10, color: Colors.grey)),
                         ),
-                      ),
+                        const SizedBox(height: 8),
+                      ],
                     );
                   },
                 );
               },
             ),
           ),
-
-          // Input Area
+          
+          // --- INPUT BAR ---
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            color: Colors.white,
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 30, top: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+            ),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: "Type something...",
-                      border: InputBorder.none,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: const InputDecoration(
+                        hintText: "Type something...",
+                        border: InputBorder.none,
+                      ),
                     ),
                   ),
                 ),
-                Container(
-                  decoration: const BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
-                    ),
-                  ),
-                  child: IconButton(
-                    icon: const Icon(Icons.send, color: Colors.white),
-                    onPressed: _sendMessage,
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: const CircleAvatar(
+                    backgroundColor: Color(0xFF1E88E5),
+                    radius: 24,
+                    child: Icon(Icons.send, color: Colors.white, size: 20),
                   ),
                 ),
               ],
