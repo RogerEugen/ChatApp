@@ -3,7 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../Login.dart';
 import 'Chatscreen.dart';
-import 'Contact.dart';  // Import the Contacts screen
+import 'Contact.dart';
 import '../notification_service.dart';
 
 class ChatList extends StatefulWidget {
@@ -20,7 +20,7 @@ class _ChatListState extends State<ChatList> {
   String get userId => _auth.currentUser!.uid;
 
   Map<String, String> emailCache = {};
-  Set<String> notifiedMessages = {}; // 🔥 Track which messages have notified
+  Set<String> notifiedMessages = {};
 
   Future<String> _getUserEmail(String uid) async {
     if (emailCache.containsKey(uid)) return emailCache[uid]!;
@@ -58,16 +58,26 @@ class _ChatListState extends State<ChatList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       appBar: AppBar(
-        title: const Text('Chats'),
+        elevation: 0,
+        title: const Text("Messages"),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
         actions: [
-          // IconButton for navigating to Contacts screen
           IconButton(
-            icon: const Icon(Icons.contacts),  // Contact icon
+            icon: const Icon(Icons.contacts),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const Contacts()),  // Navigate to Contacts
+                MaterialPageRoute(builder: (_) => const Contacts()),
               );
             },
           ),
@@ -86,9 +96,10 @@ class _ChatListState extends State<ChatList> {
 
           final messages = snapshot.data!.docs;
 
-          if (messages.isEmpty) return const Center(child: Text('No chats yet'));
+          if (messages.isEmpty) {
+            return const Center(child: Text('No chats yet'));
+          }
 
-          // Sort messages by timestamp
           messages.sort((a, b) {
             final aTime = a['timestamp'];
             final bTime = b['timestamp'];
@@ -102,7 +113,6 @@ class _ChatListState extends State<ChatList> {
             final participants = List<String>.from(msg['participants']);
             final otherUser = participants.firstWhere((id) => id != userId);
 
-            // Track latest message per user
             if (!latestChats.containsKey(otherUser)) {
               latestChats[otherUser] = msg;
             }
@@ -111,6 +121,7 @@ class _ChatListState extends State<ChatList> {
           final otherUserIds = latestChats.keys.toList();
 
           return ListView.builder(
+            padding: const EdgeInsets.all(12),
             itemCount: otherUserIds.length,
             itemBuilder: (context, index) {
               final otherId = otherUserIds[index];
@@ -120,41 +131,48 @@ class _ChatListState extends State<ChatList> {
                 future: _getUserEmail(otherId),
                 builder: (context, emailSnapshot) {
                   if (!emailSnapshot.hasData) {
-                    return const ListTile(title: Text('Loading...'));
+                    return const SizedBox();
                   }
 
                   final email = emailSnapshot.data!;
 
-                  return ListTile(
-                    leading: const CircleAvatar(child: Icon(Icons.person)),
-                    title: Text(email),
-                    subtitle: Text(latestMessage),
-                    onTap: () async {
-                      // Mark messages as read when opening chat
-                      final chatMessages = await _firestore
-                          .collection('messages')
-                          .where('participants', arrayContains: userId)
-                          .get();
-
-                      for (var doc in chatMessages.docs) {
-                        if (doc['senderId'] == otherId &&
-                            doc['receiverId'] == userId &&
-                            doc['isRead'] == false) {
-                          await doc.reference.update({'isRead': true});
-                        }
-                      }
-
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChatScreen(
-                            otherUserId: otherId,
-                            otherUserEmail: email,
-                            isNewChat: false,
+                  return Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 4,
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: ListTile(
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 10,
+                      ),
+                      leading: const CircleAvatar(
+                        backgroundColor: Color(0xFF8E2DE2),
+                        child: Icon(Icons.person, color: Colors.white),
+                      ),
+                      title: Text(
+                        email,
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      subtitle: Text(
+                        latestMessage,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      onTap: () async {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatScreen(
+                              otherUserId: otherId,
+                              otherUserEmail: email,
+                              isNewChat: false,
+                            ),
                           ),
-                        ),
-                      );
-                    },
+                        );
+                      },
+                    ),
                   );
                 },
               );
@@ -163,6 +181,7 @@ class _ChatListState extends State<ChatList> {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: const Color(0xFF8E2DE2),
         onPressed: _startNewChat,
         child: const Icon(Icons.chat),
       ),
