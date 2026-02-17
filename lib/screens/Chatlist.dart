@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:intl/intl.dart'; // Ensure this is in your pubspec.yaml
+import 'package:intl/intl.dart';
 import '../Login.dart';
 import 'Chatscreen.dart';
 import 'Contact.dart';
-import '../notification_service.dart';
+// import '../notification_service.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({super.key});
@@ -66,7 +66,11 @@ class _ChatListState extends State<ChatList> {
         elevation: 0,
         centerTitle: true,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            color: Colors.black,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
@@ -77,6 +81,15 @@ class _ChatListState extends State<ChatList> {
           IconButton(
             icon: const Icon(Icons.edit_note, color: Colors.black, size: 28),
             onPressed: _startNewChat,
+          ),
+          IconButton(
+            icon: const Icon(Icons.contacts, color: Colors.black, size: 28),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const Contacts()),
+              );
+            },
           ),
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.black),
@@ -119,7 +132,12 @@ class _ChatListState extends State<ChatList> {
 
                 final messages = snapshot.data!.docs;
                 if (messages.isEmpty) {
-                  return const Center(child: Text('No chats yet', style: TextStyle(color: Colors.grey)));
+                  return const Center(
+                    child: Text(
+                      'No chats yet',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
                 }
 
                 messages.sort((a, b) {
@@ -132,8 +150,12 @@ class _ChatListState extends State<ChatList> {
                 final Map<String, QueryDocumentSnapshot> latestChats = {};
                 for (var msg in messages) {
                   final participants = List<String>.from(msg['participants']);
-                  final otherUser = participants.firstWhere((id) => id != userId, orElse: () => "");
-                  if (otherUser.isNotEmpty && !latestChats.containsKey(otherUser)) {
+                  final otherUser = participants.firstWhere(
+                    (id) => id != userId,
+                    orElse: () => "",
+                  );
+                  if (otherUser.isNotEmpty &&
+                      !latestChats.containsKey(otherUser)) {
                     latestChats[otherUser] = msg;
                   }
                 }
@@ -141,15 +163,21 @@ class _ChatListState extends State<ChatList> {
                 final otherUserIds = latestChats.keys.toList();
 
                 return ListView.separated(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 20,
+                    vertical: 10,
+                  ),
                   itemCount: otherUserIds.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 5),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(height: 5),
                   itemBuilder: (context, index) {
                     final otherId = otherUserIds[index];
                     final msgDoc = latestChats[otherId]!;
                     final latestMessage = msgDoc['text'];
                     final timestamp = msgDoc['timestamp'] as Timestamp?;
-                    final timeStr = timestamp != null ? DateFormat('H:mm').format(timestamp.toDate()) : "";
+                    final timeStr = timestamp != null
+                        ? DateFormat('H:mm').format(timestamp.toDate())
+                        : "";
 
                     return FutureBuilder<String>(
                       future: _getUserEmail(otherId),
@@ -157,7 +185,9 @@ class _ChatListState extends State<ChatList> {
                         final email = emailSnapshot.data ?? "...";
 
                         return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(vertical: 8),
+                          contentPadding: const EdgeInsets.symmetric(
+                            vertical: 8,
+                          ),
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
@@ -172,11 +202,17 @@ class _ChatListState extends State<ChatList> {
                             children: [
                               Text(
                                 email.split('@')[0], // Shows name part
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
                               ),
                               Text(
                                 timeStr,
-                                style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                style: const TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
                               ),
                             ],
                           ),
@@ -186,7 +222,10 @@ class _ChatListState extends State<ChatList> {
                               latestMessage,
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.grey.shade600,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                           onTap: () {
