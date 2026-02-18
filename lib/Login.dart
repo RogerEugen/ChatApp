@@ -11,17 +11,35 @@ class Login extends StatefulWidget {
 }
 
 class _LoginState extends State<Login> {
-  final _emailController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _auth = FirebaseAuth.instance;
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // Dispose controllers (Best practice improvement)
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   // Handle user login
   Future<void> _login() async {
+    // Simple validation (minor safe improvement)
+    if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter email and password')),
+      );
+      return;
+    }
+
     try {
       await _auth.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+
+      if (!mounted) return;
 
       Navigator.pushReplacement(
         context,
@@ -43,7 +61,7 @@ class _LoginState extends State<Login> {
         child: SingleChildScrollView(
           child: Column(
             children: [
-              //  Top Gradient Design
+              // Top Gradient Design
               Container(
                 height: 250,
                 width: double.infinity,
@@ -71,7 +89,7 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
-              // 📧 Email Field
+              // Email Field
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: TextField(
@@ -107,6 +125,7 @@ class _LoginState extends State<Login> {
                   controller: _passwordController,
                   obscureText: true,
                   textInputAction: TextInputAction.done,
+                  onSubmitted: (_) => _login(), // minor improvement
                   decoration: InputDecoration(
                     hintText: "Password",
                     filled: true,
@@ -123,7 +142,6 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 10),
 
-              // Forgot Password
               Padding(
                 padding: const EdgeInsets.only(right: 32),
                 child: Align(
@@ -137,7 +155,7 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
-              //  Login Button
+              // Login Button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
