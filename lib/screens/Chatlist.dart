@@ -125,12 +125,12 @@ class _ChatListState extends State<ChatList> {
                   });
                 },
                 decoration: const InputDecoration(
-                  icon: Icon(Icons.search, color: Colors.grey),
+                  icon: Icon(Icons.search, color: Color.fromARGB(255, 161, 157, 157)),
                   hintText: "Search",
-                  hintStyle: TextStyle(color: Colors.grey),
+                  hintStyle: TextStyle(color: Color.fromARGB(255, 162, 158, 158)),
                   border: InputBorder.none,
                 ),
-              ),
+              )
             ),
           ),
 
