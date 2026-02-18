@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'screens/Chatlist.dart'; // Adjust import
-import 'Register.dart'; // Adjust import;
+import 'screens/Chatlist.dart';
+import 'Register.dart';
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -19,31 +19,31 @@ class _LoginState extends State<Login> {
   Future<void> _login() async {
     try {
       await _auth.signInWithEmailAndPassword(
-        email: _emailController.text,
-        password: _passwordController.text,
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
       );
-      // Redirect to Chatlist page after login
+
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ChatList()),
       );
     } catch (e) {
-      print("Error: $e");
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Failed to log in: $e')));
+      debugPrint("Login Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to log in: $e')),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor:  Color(0xFFF5F5F5),
+      backgroundColor: const Color(0xFFF5F5F5),
       body: SafeArea(
         child: SingleChildScrollView(
           child: Column(
             children: [
-              // 🔵 Top Gradient Design
+              //  Top Gradient Design
               Container(
                 height: 250,
                 width: double.infinity,
@@ -71,23 +71,28 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
-              // 🔐 Email Field
+              // 📧 Email Field
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: TextField(
                   controller: _emailController,
+                  keyboardType: TextInputType.emailAddress,
+                  textInputAction: TextInputAction.next,
                   decoration: InputDecoration(
                     hintText: "Email",
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(color: Colors.purple),
+                      borderSide:
+                          const BorderSide(color: Colors.purple),
                     ),
                     enabledBorder: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
-                      borderSide: const BorderSide(color: Colors.purple),
+                      borderSide:
+                          const BorderSide(color: Colors.purple),
                     ),
                   ),
                 ),
@@ -95,17 +100,19 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 20),
 
-              // 🔐 Password Field
+              // Password Field
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: TextField(
                   controller: _passwordController,
                   obscureText: true,
+                  textInputAction: TextInputAction.done,
                   decoration: InputDecoration(
                     hintText: "Password",
                     filled: true,
                     fillColor: Colors.white,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    contentPadding:
+                        const EdgeInsets.symmetric(horizontal: 20),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(30),
                       borderSide: BorderSide.none,
@@ -130,7 +137,7 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
-              // 🔵 Login Button
+              //  Login Button
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: SizedBox(
@@ -147,14 +154,20 @@ class _LoginState extends State<Login> {
                     child: Ink(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                          colors: [
+                            Color(0xFF8E2DE2),
+                            Color(0xFF4A00E0)
+                          ],
                         ),
-                        borderRadius: BorderRadius.circular(30),
+                        borderRadius:
+                            BorderRadius.circular(30),
                       ),
                       child: const Center(
                         child: Text(
                           "Login",
-                          style: TextStyle(fontSize: 18, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 18,
+                              color: Colors.white),
                         ),
                       ),
                     ),
@@ -164,7 +177,7 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
-              // 🔵 Bottom Signup Section
+              // Bottom Signup Section
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
@@ -174,7 +187,8 @@ class _LoginState extends State<Login> {
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const Register(),
+                          builder: (context) =>
+                              const Register(),
                         ),
                       );
                     },
