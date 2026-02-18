@@ -15,14 +15,14 @@ class _LoginState extends State<Login> {
   final _passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
 
-  // Handle user login
+  //This  handle user login
   Future<void> _login() async {
     try {
       await _auth.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
-      // Redirect to Chatlist page after login
+      // after login the page will go to the chatlist screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ChatList()),
@@ -63,7 +63,7 @@ class _LoginState extends State<Login> {
                   "Login",
                   style: TextStyle(
                     fontSize: 32,
-                    color: Colors.white,
+                    color: Color.fromARGB(255, 252, 252, 252),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -147,7 +147,7 @@ class _LoginState extends State<Login> {
                     child: Ink(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                          colors: [Color.fromARGB(255, 111, 56, 159), Color(0xFF4A00E0)],
                         ),
                         borderRadius: BorderRadius.circular(30),
                       ),
@@ -164,11 +164,11 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
-              // 🔵 Bottom Signup Section
+              // 🔵 Bottom Signup Section for those with already registered
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("New here? "),
+                  const Text("New here!! "),
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -179,7 +179,7 @@ class _LoginState extends State<Login> {
                       );
                     },
                     child: const Text(
-                      "SignUp >",
+                      "SignUp ^",
                       style: TextStyle(
                         color: Colors.purple,
                         fontWeight: FontWeight.bold,
