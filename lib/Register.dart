@@ -61,7 +61,7 @@ Widget build(BuildContext context) {
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color.fromARGB(255, 87, 41, 127), Color.fromARGB(255, 101, 28, 246)],
+                  colors: [Color.fromARGB(255, 118, 38, 189), Color.fromARGB(255, 106, 37, 244)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -96,7 +96,7 @@ Widget build(BuildContext context) {
                       const EdgeInsets.symmetric(horizontal: 20),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
-                    borderSide: const BorderSide(color: Colors.purple),
+                    borderSide: const BorderSide(color: Color.fromARGB(255, 136, 42, 153)),
                   ),
                   enabledBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(30),
