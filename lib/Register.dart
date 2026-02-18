@@ -61,7 +61,7 @@ Widget build(BuildContext context) {
               width: double.infinity,
               decoration: const BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                  colors: [Color.fromARGB(255, 87, 41, 127), Color.fromARGB(255, 101, 28, 246)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -83,7 +83,7 @@ Widget build(BuildContext context) {
 
             const SizedBox(height: 40),
 
-            // 📧 Email Field
+            // 📧 Email details 
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: TextField(
