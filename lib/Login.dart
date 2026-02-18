@@ -14,8 +14,9 @@ class _LoginState extends State<Login> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  bool _isLoading = false;
 
-  // Dispose controllers (Best practice improvement)
+  /// Dispose controllers to prevent memory leaks
   @override
   void dispose() {
     _emailController.dispose();
@@ -23,15 +24,27 @@ class _LoginState extends State<Login> {
     super.dispose();
   }
 
-  // Handle user login
+  /// Validates email format using basic regex pattern
+  bool _isValidEmail(String email) {
+    final emailRegex = RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$');
+    return emailRegex.hasMatch(email);
+  }
+
+  /// Handles user login with email and password
   Future<void> _login() async {
-    // Simple validation (minor safe improvement)
+    // Input validation
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter email and password')),
-      );
+      _showErrorSnackBar('Please enter email and password');
       return;
     }
+
+    // Email format validation
+    if (!_isValidEmail(_emailController.text.trim())) {
+      _showErrorSnackBar('Please enter a valid email address');
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
       await _auth.signInWithEmailAndPassword(
@@ -45,11 +58,40 @@ class _LoginState extends State<Login> {
         context,
         MaterialPageRoute(builder: (context) => const ChatList()),
       );
+    } on FirebaseAuthException catch (e) {
+      _showErrorSnackBar(_getErrorMessage(e.code));
     } catch (e) {
-      debugPrint("Login Error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to log in: $e')),
-      );
+      debugPrint('Login Error: $e');
+      _showErrorSnackBar('An unexpected error occurred');
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  /// Shows error snackbar with message
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  /// Returns user-friendly error message based on Firebase error code
+  String _getErrorMessage(String errorCode) {
+    switch (errorCode) {
+      case 'user-not-found':
+        return 'No account found with this email';
+      case 'wrong-password':
+        return 'Incorrect password';
+      case 'invalid-email':
+        return 'Invalid email address';
+      default:
+        return 'Login failed. Please try again';
     }
   }
 
@@ -162,7 +204,7 @@ class _LoginState extends State<Login> {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: _login,
+                    onPressed: _isLoading ? null : _login,
                     style: ElevatedButton.styleFrom(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(30),
@@ -180,13 +222,23 @@ class _LoginState extends State<Login> {
                         borderRadius:
                             BorderRadius.circular(30),
                       ),
-                      child: const Center(
-                        child: Text(
-                          "Login",
-                          style: TextStyle(
-                              fontSize: 18,
-                              color: Colors.white),
-                        ),
+                      child: Center(
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white),
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Login",
+                                style: TextStyle(
+                                    fontSize: 18,
+                                    color: Colors.white),
+                              ),
                       ),
                     ),
                   ),
