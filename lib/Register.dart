@@ -130,7 +130,7 @@ Widget build(BuildContext context) {
 
             const SizedBox(height: 40),
 
-            // 🔵 Register Button
+            // 🔵 Register if you havent an account
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: SizedBox(
@@ -149,7 +149,7 @@ Widget build(BuildContext context) {
                       gradient: const LinearGradient(
                         colors: [
                           Color(0xFF8E2DE2),
-                          Color(0xFF4A00E0)
+                          Color.fromARGB(255, 91, 10, 253)
                         ],
                       ),
                       borderRadius: BorderRadius.circular(30),
@@ -174,7 +174,7 @@ Widget build(BuildContext context) {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Text("Already have an account? "),
+                const Text("Already have an account?? "),
                 TextButton(
                   onPressed: () {
                     Navigator.pushReplacement(
@@ -186,7 +186,7 @@ Widget build(BuildContext context) {
                   child: const Text(
                     "Login >",
                     style: TextStyle(
-                      color: Colors.purple,
+                      color: Color.fromARGB(255, 178, 89, 194),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
