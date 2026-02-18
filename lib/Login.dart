@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+<<<<<<< HEAD
 import 'screens/Chatlist.dart';
 import 'Register.dart';
+=======
+import 'screens/Chatlist.dart'; // Adjust import
+import 'Register.dart'; // Adjust import;
+>>>>>>> 3fb9b82334becde2f47eb66067b30a9e8e25f531
 
 class Login extends StatefulWidget {
   const Login({super.key});
@@ -15,18 +20,30 @@ class _LoginState extends State<Login> {
   final _passwordController = TextEditingController();
   final _auth = FirebaseAuth.instance;
 
+<<<<<<< HEAD
+=======
+  //This  handle user login
+>>>>>>> 3fb9b82334becde2f47eb66067b30a9e8e25f531
   Future<void> _login() async {
     try {
       await _auth.signInWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
+<<<<<<< HEAD
 
+=======
+      // after login the page will go to the chatlist screen
+>>>>>>> 3fb9b82334becde2f47eb66067b30a9e8e25f531
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ChatList()),
       );
     } catch (e) {
+<<<<<<< HEAD
+=======
+      print("Error: $e");
+>>>>>>> 3fb9b82334becde2f47eb66067b30a9e8e25f531
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Failed to log in: $e')));
@@ -36,6 +53,7 @@ class _LoginState extends State<Login> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+<<<<<<< HEAD
       body: Stack(
         children: [
           // Blue background
@@ -162,10 +180,159 @@ class _LoginState extends State<Login> {
                         ),
                       ),
                       child: const Text("Sign up"),
+=======
+      backgroundColor:  Color(0xFFF5F5F5),
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: Column(
+            children: [
+              // 🔵 Top Gradient Design
+              Container(
+                height: 250,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Color(0xFF8E2DE2), Color(0xFF4A00E0)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(80),
+                  ),
+                ),
+                padding: const EdgeInsets.only(left: 24, top: 60),
+                alignment: Alignment.topLeft,
+                child: const Text(
+                  "Login",
+                  style: TextStyle(
+                    fontSize: 32,
+                    color: Color.fromARGB(255, 252, 252, 252),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // 🔐 Email Field
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: TextField(
+                  controller: _emailController,
+                  decoration: InputDecoration(
+                    hintText: "Email",
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: const BorderSide(color: Colors.purple),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: const BorderSide(color: Colors.purple),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // 🔐 Password Field
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: InputDecoration(
+                    hintText: "Password",
+                    filled: true,
+                    fillColor: Colors.white,
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 20),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              // Forgot Password
+              Padding(
+                padding: const EdgeInsets.only(right: 32),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    "Forgot password?",
+                    style: TextStyle(color: Colors.teal[700]),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // 🔵 Login Button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _login,
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      padding: EdgeInsets.zero,
+                    ),
+                    child: Ink(
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color.fromARGB(255, 111, 56, 159), Color(0xFF4A00E0)],
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: const Center(
+                        child: Text(
+                          "Login",
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 40),
+
+              // 🔵 Bottom Signup Section for those with already registered
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text("New here!! "),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pushReplacement(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const Register(),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "SignUp ^",
+                      style: TextStyle(
+                        color: Colors.purple,
+                        fontWeight: FontWeight.bold,
+                      ),
+>>>>>>> 3fb9b82334becde2f47eb66067b30a9e8e25f531
                     ),
                   ),
                 ],
               ),
+<<<<<<< HEAD
             ),
           ),
 
@@ -183,6 +350,11 @@ class _LoginState extends State<Login> {
             ),
           ),
         ],
+=======
+            ],
+          ),
+        ),
+>>>>>>> 3fb9b82334becde2f47eb66067b30a9e8e25f531
       ),
     );
   }
