@@ -107,6 +107,23 @@ Widget build(BuildContext context) {
             ),
 
             const SizedBox(height: 20),
+            ElevatedButton(onPressed: _register, child: const Text('Register')),
+            TextButton(
+              onPressed: () {
+                // Navigate to Login screen
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const Login()),
+                );
+              },
+              child: const Text('Already have an account? Login >'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
 
             // 🔐 Password Field
             Padding(
