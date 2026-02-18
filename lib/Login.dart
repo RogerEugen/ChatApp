@@ -27,9 +27,9 @@ class _LoginState extends State<Login> {
         MaterialPageRoute(builder: (context) => const ChatList()),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to log in: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to log in: $e')));
     }
   }
 
@@ -57,9 +57,7 @@ class _LoginState extends State<Login> {
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(40),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(40)),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -154,7 +152,8 @@ class _LoginState extends State<Login> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                              builder: (context) => const Register()),
+                            builder: (context) => const Register(),
+                          ),
                         );
                       },
                       style: OutlinedButton.styleFrom(

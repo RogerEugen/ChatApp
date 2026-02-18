@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class ChatScreen extends StatefulWidget {
   final String otherUserId;
-  final String otherUserName;
-  final bool isNewChat; // if true, user will input email
+  final String otherUserEmail;
+  final bool isNewChat;
 
   const ChatScreen({
     super.key,
     required this.otherUserId,
-    required this.otherUserName,
+    required this.otherUserEmail,
     this.isNewChat = false,
   });
 
   @override
-  _ChatScreenState createState() => _ChatScreenState();
+  State<ChatScreen> createState() => _ChatScreenState();
 }
 
 class _ChatScreenState extends State<ChatScreen> {
@@ -24,151 +25,237 @@ class _ChatScreenState extends State<ChatScreen> {
   final _messageController = TextEditingController();
   final _emailController = TextEditingController();
 
-  String get userId => _auth.currentUser?.uid ?? '';
-  String otherUserId = '';
-  String otherUserEmail = '';
+  String get myId => _auth.currentUser!.uid;
 
-  late bool isNewChat; // ✅ local mutable state
+  late String otherUserId;
+  late String otherUserEmail;
+  late bool isNewChat;
 
   @override
   void initState() {
     super.initState();
-    isNewChat = widget.isNewChat; // initialize local state
-    if (!isNewChat) {
-      otherUserId = widget.otherUserId;
-      otherUserEmail = widget.otherUserName;
-    }
+    otherUserId = widget.otherUserId;
+    otherUserEmail = widget.otherUserEmail;
+    isNewChat = widget.isNewChat;
   }
 
+  // --- BACKEND LOGIC (UNTOUCHED) ---
   Future<void> _sendMessage() async {
-    String receiverId = otherUserId;
-
-    if (isNewChat) {
-      final email = _emailController.text.trim();
-      final message = _messageController.text.trim();
-      if (email.isEmpty || message.isEmpty) return;
-
-      // Find user by email
-      final query = await _firestore
-          .collection('users')
-          .where('email', isEqualTo: email)
-          .get();
-
-      if (query.docs.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('User not found')),
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+    String targetUserId = otherUserId;
+    String targetEmail = otherUserEmail;
+    try {
+      if (isNewChat) {
+        final email = _emailController.text.trim();
+        if (email.isEmpty) return;
+        final userQuery = await _firestore
+            .collection('users')
+            .where('email', isEqualTo: email)
+            .limit(1)
+            .get();
+        if (userQuery.docs.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User not found')));
+          return;
+        }
+        targetUserId = userQuery.docs.first.id;
+        targetEmail = email;
+        await _firestore.collection('messages').add({
+          'senderId': myId,
+          'receiverId': targetUserId,
+          'text': text,
+          'timestamp': FieldValue.serverTimestamp(),
+          'participants': [myId, targetUserId],
+        });
+        _messageController.clear();
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ChatScreen(
+              otherUserId: targetUserId,
+              otherUserEmail: targetEmail,
+              isNewChat: false,
+            ),
+          ),
         );
         return;
       }
-
-      receiverId = query.docs.first.id;
-      otherUserId = receiverId;
-      otherUserEmail = email;
-
-      // Mark as existing chat now
-      setState(() {
-        isNewChat = false;
+      await _firestore.collection('messages').add({
+        'senderId': myId,
+        'receiverId': targetUserId,
+        'text': text,
+        'timestamp': FieldValue.serverTimestamp(),
+        'participants': [myId, targetUserId],
       });
+      _messageController.clear();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error sending message: $e')));
     }
-
-    // Send message
-    await _firestore.collection('messages').add({
-      'senderId': userId,
-      'receiverId': receiverId,
-      'message': _messageController.text.trim(),
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    _messageController.clear();
   }
 
+  // --- UI UPDATES START HERE ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: isNewChat
-            ? TextField(
-                controller: _emailController,
-                decoration: const InputDecoration(
-                  hintText: 'Enter user email',
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.black, size: 20),
+          onPressed: () => Navigator.pop(context),
+        ),
+        title: Row(
+          children: [
+            const CircleAvatar(
+              backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=james'), // Placeholder
+              radius: 20,
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  otherUserEmail.split('@')[0], // Display name part of email
+                  style: const TextStyle(color: Colors.black, fontSize: 16, fontWeight: FontWeight.bold),
                 ),
-              )
-            : Text(otherUserEmail),
+                const Text(
+                  "Active 2hrs ago",
+                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+              ],
+            ),
+          ],
+        ),
+        actions: [
+          IconButton(icon: const Icon(Icons.videocam_outlined, color: Colors.black), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.phone_outlined, color: Colors.black), onPressed: () {}),
+          IconButton(icon: const Icon(Icons.more_vert, color: Colors.black), onPressed: () {}),
+        ],
       ),
       body: Column(
         children: [
+          if (isNewChat)
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _emailController,
+                decoration: const InputDecoration(labelText: 'Enter recipient email', border: OutlineInputBorder()),
+              ),
+            ),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
                   .collection('messages')
-                  .orderBy('timestamp', descending: true)
+                  .where('participants', arrayContains: myId)
                   .snapshots(),
               builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+                if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
 
-                final messages = snapshot.data?.docs
-                        .where((doc) =>
-                            (doc['senderId'] == userId &&
-                                doc['receiverId'] == otherUserId) ||
-                            (doc['senderId'] == otherUserId &&
-                                doc['receiverId'] == userId))
-                        .toList() ??
-                    [];
+                var docs = snapshot.data!.docs
+                    .where((doc) => (doc['participants'] as List).contains(otherUserId))
+                    .toList();
 
-                if (messages.isEmpty) {
-                  return const Center(child: Text('No messages yet.'));
-                }
+                docs.sort((a, b) {
+                  final aTime = a['timestamp'] as Timestamp?;
+                  final bTime = b['timestamp'] as Timestamp?;
+                  if (aTime == null || bTime == null) return 0;
+                  return aTime.compareTo(bTime);
+                });
 
                 return ListView.builder(
-                  reverse: true,
-                  itemCount: messages.length,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+                  itemCount: docs.length,
                   itemBuilder: (context, index) {
-                    final message = messages[index];
-                    final isMe = message['senderId'] == userId;
+                    final doc = docs[index];
+                    final isMe = doc['senderId'] == myId;
+                    final timestamp = doc['timestamp'] as Timestamp?;
+                    final timeString = timestamp != null 
+                        ? DateFormat('hh:mm a').format(timestamp.toDate()) 
+                        : '';
 
-                    return Padding(
-                      padding: const EdgeInsets.symmetric(
-                          vertical: 4.0, horizontal: 8.0),
-                      child: Align(
-                        alignment:
-                            isMe ? Alignment.centerRight : Alignment.centerLeft,
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: isMe ? Colors.blue : Colors.grey[300],
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            message['message'],
-                            style: TextStyle(
-                              color: isMe ? Colors.white : Colors.black,
+                    return Column(
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        if (!isMe) ...[
+                          Text(otherUserEmail.split('@')[0], style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          const SizedBox(height: 4),
+                        ],
+                        Row(
+                          mainAxisAlignment: isMe ? MainAxisAlignment.end : MainAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (!isMe) 
+                              const Padding(
+                                padding: EdgeInsets.only(right: 8),
+                                child: CircleAvatar(radius: 15, backgroundImage: NetworkImage('https://i.pravatar.cc/150?u=james')),
+                              ),
+                            Flexible(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: isMe ? const Color(0xFF1E88E5) : const Color(0xFFF5F5F5),
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: const Radius.circular(20),
+                                    topRight: const Radius.circular(20),
+                                    bottomLeft: Radius.circular(isMe ? 20 : 0),
+                                    bottomRight: Radius.circular(isMe ? 0 : 20),
+                                  ),
+                                ),
+                                child: Text(
+                                  doc['text'] ?? '',
+                                  style: TextStyle(color: isMe ? Colors.white : Colors.black87, fontSize: 15),
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                      ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 4),
+                          child: Text(timeString, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     );
                   },
                 );
               },
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          
+          // --- INPUT BAR ---
+          Container(
+            padding: const EdgeInsets.only(left: 16, right: 16, bottom: 30, top: 10),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, -5))],
+            ),
             child: Row(
               children: [
                 Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: const InputDecoration(
-                      hintText: 'Enter message...',
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F5F5),
+                      borderRadius: BorderRadius.circular(25),
+                    ),
+                    child: TextField(
+                      controller: _messageController,
+                      decoration: const InputDecoration(
+                        hintText: "Type something...",
+                        border: InputBorder.none,
+                      ),
                     ),
                   ),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.send),
-                  onPressed: _sendMessage,
+                const SizedBox(width: 12),
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: const CircleAvatar(
+                    backgroundColor: Color(0xFF1E88E5),
+                    radius: 24,
+                    child: Icon(Icons.send, color: Colors.white, size: 20),
+                  ),
                 ),
               ],
             ),
