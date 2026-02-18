@@ -121,7 +121,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
                 const Text(
                   "Active 2hrs ago",
-                  style: TextStyle(color: Colors.grey, fontSize: 12),
+                  style: TextStyle(color: Color.fromARGB(255, 141, 134, 134), fontSize: 12),
                 ),
               ],
             ),
@@ -223,7 +223,7 @@ class _ChatScreenState extends State<ChatScreen> {
             ),
           ),
           
-          // --- INPUT BAR ---
+          // --- INPUT BAR  DETAIL---
           Container(
             padding: const EdgeInsets.only(left: 16, right: 16, bottom: 30, top: 10),
             decoration: BoxDecoration(
@@ -252,7 +252,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 GestureDetector(
                   onTap: _sendMessage,
                   child: const CircleAvatar(
-                    backgroundColor: Color(0xFF1E88E5),
+                    backgroundColor: Color.fromARGB(255, 53, 160, 253),
                     radius: 24,
                     child: Icon(Icons.send, color: Colors.white, size: 20),
                   ),

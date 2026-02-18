@@ -122,8 +122,8 @@ class _LoginState extends State<Login> {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    "Forgot password?",
-                    style: TextStyle(color: Colors.teal[700]),
+                    "Forgot password??",
+                    style: TextStyle(color: const Color.fromARGB(255, 97, 239, 222)),
                   ),
                 ),
               ),
@@ -181,7 +181,7 @@ class _LoginState extends State<Login> {
                     child: const Text(
                       "SignUp ^",
                       style: TextStyle(
-                        color: Color.fromARGB(255, 151, 77, 164),
+                        color: Color.fromARGB(255, 193, 89, 211),
                         fontWeight: FontWeight.bold,
                       ),
                     ),
