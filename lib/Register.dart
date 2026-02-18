@@ -73,7 +73,7 @@ class _RegisterState extends State<Register> {
                   MaterialPageRoute(builder: (context) => const Login()),
                 );
               },
-              child: const Text('Already have an account? Login'),
+              child: const Text('Already have an account? Login >'),
             ),
           ],
         ),

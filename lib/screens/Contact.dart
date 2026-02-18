@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'Chatscreen.dart'; // Assuming this is your chat screen
 
 class Contacts extends StatefulWidget {
-  const Contacts({super.key});
+  const Contacts ({super.key});
 
   @override
   State<Contacts> createState() => _ContactsState();
@@ -50,7 +51,8 @@ class _ContactsState extends State<Contacts> {
                   child: Icon(Icons.person),
                 ),
                 title: Text(email),
-                onTap: () {
+                onTap: () 
+                {
                   // Navigate to ChatScreen with selected contact
                   Navigator.push(
                     context,
