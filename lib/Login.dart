@@ -16,6 +16,7 @@ class _LoginState extends State<Login> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   bool _isLoading = false;
 
+<<<<<<< HEAD
   /// Dispose controllers to prevent memory leaks
   @override
   void dispose() {
@@ -31,6 +32,9 @@ class _LoginState extends State<Login> {
   }
 
   /// Handles user login with email and password
+=======
+  //This  handle user login
+>>>>>>> b22d9f92c42865757d374b19ea71325c51e82c25
   Future<void> _login() async {
     // Input validation
     if (_emailController.text.isEmpty || _passwordController.text.isEmpty) {
@@ -51,9 +55,13 @@ class _LoginState extends State<Login> {
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
+<<<<<<< HEAD
 
       if (!mounted) return;
 
+=======
+      // after login the page will go to the chatlist screen
+>>>>>>> b22d9f92c42865757d374b19ea71325c51e82c25
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const ChatList()),
@@ -123,7 +131,7 @@ class _LoginState extends State<Login> {
                   "Login",
                   style: TextStyle(
                     fontSize: 32,
-                    color: Colors.white,
+                    color: Color.fromARGB(255, 252, 252, 252),
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -189,8 +197,8 @@ class _LoginState extends State<Login> {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: Text(
-                    "Forgot password?",
-                    style: TextStyle(color: Colors.teal[700]),
+                    "Forgot password??",
+                    style: TextStyle(color: const Color.fromARGB(255, 97, 239, 222)),
                   ),
                 ),
               ),
@@ -214,10 +222,14 @@ class _LoginState extends State<Login> {
                     child: Ink(
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
+<<<<<<< HEAD
                           colors: [
                             Color(0xFF8E2DE2),
                             Color(0xFF4A00E0)
                           ],
+=======
+                          colors: [Color.fromARGB(255, 111, 56, 159), Color(0xFF4A00E0)],
+>>>>>>> b22d9f92c42865757d374b19ea71325c51e82c25
                         ),
                         borderRadius:
                             BorderRadius.circular(30),
@@ -247,11 +259,15 @@ class _LoginState extends State<Login> {
 
               const SizedBox(height: 40),
 
+<<<<<<< HEAD
               // Bottom Signup Section
+=======
+              // 🔵 Bottom Signup Section for those with already registered
+>>>>>>> b22d9f92c42865757d374b19ea71325c51e82c25
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Text("New here? "),
+                  const Text("New here!! "),
                   TextButton(
                     onPressed: () {
                       Navigator.pushReplacement(
@@ -263,9 +279,9 @@ class _LoginState extends State<Login> {
                       );
                     },
                     child: const Text(
-                      "SignUp >",
+                      "SignUp ^",
                       style: TextStyle(
-                        color: Colors.purple,
+                        color: Color.fromARGB(255, 193, 89, 211),
                         fontWeight: FontWeight.bold,
                       ),
                     ),

@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import '../Login.dart';
 import 'Chatscreen.dart';
 import 'Contact.dart';
-// import '../notification_service.dart';
 
 class ChatList extends StatefulWidget {
   const ChatList({super.key});
@@ -17,6 +16,9 @@ class ChatList extends StatefulWidget {
 class _ChatListState extends State<ChatList> {
   final _auth = FirebaseAuth.instance;
   final _firestore = FirebaseFirestore.instance;
+
+  final TextEditingController _searchController = TextEditingController();
+  String searchQuery = "";
 
   String get userId => _auth.currentUser!.uid;
 
@@ -56,11 +58,17 @@ class _ChatListState extends State<ChatList> {
     );
   }
 
-  // --- UI UPDATES START HERE ---
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  // --- UI ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Clean white background from image
+      backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
@@ -99,7 +107,7 @@ class _ChatListState extends State<ChatList> {
       ),
       body: Column(
         children: [
-          // Search Bar from UI image
+          // 🔍 SEARCH BAR
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Container(
@@ -109,16 +117,23 @@ class _ChatListState extends State<ChatList> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.grey.shade200),
               ),
-              child: const TextField(
-                decoration: InputDecoration(
-                  icon: Icon(Icons.search, color: Colors.grey),
+              child: TextField(
+                controller: _searchController,
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value.toLowerCase();
+                  });
+                },
+                decoration: const InputDecoration(
+                  icon: Icon(Icons.search, color: Color.fromARGB(255, 161, 157, 157)),
                   hintText: "Search",
-                  hintStyle: TextStyle(color: Colors.grey),
+                  hintStyle: TextStyle(color: Color.fromARGB(255, 162, 158, 158)),
                   border: InputBorder.none,
                 ),
-              ),
+              )
             ),
           ),
+
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: _firestore
@@ -131,6 +146,7 @@ class _ChatListState extends State<ChatList> {
                 }
 
                 final messages = snapshot.data!.docs;
+
                 if (messages.isEmpty) {
                   return const Center(
                     child: Text(
@@ -140,6 +156,7 @@ class _ChatListState extends State<ChatList> {
                   );
                 }
 
+                // Sort by latest timestamp
                 messages.sort((a, b) {
                   final aTime = a['timestamp'];
                   final bTime = b['timestamp'];
@@ -147,6 +164,7 @@ class _ChatListState extends State<ChatList> {
                   return bTime.compareTo(aTime);
                 });
 
+                // Get latest message per user
                 final Map<String, QueryDocumentSnapshot> latestChats = {};
                 for (var msg in messages) {
                   final participants = List<String>.from(msg['participants']);
@@ -162,11 +180,18 @@ class _ChatListState extends State<ChatList> {
 
                 final otherUserIds = latestChats.keys.toList();
 
+                if (otherUserIds.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'No chats yet',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  );
+                }
+
                 return ListView.separated(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
+                      horizontal: 20, vertical: 10),
                   itemCount: otherUserIds.length,
                   separatorBuilder: (context, index) =>
                       const SizedBox(height: 5),
@@ -182,26 +207,38 @@ class _ChatListState extends State<ChatList> {
                     return FutureBuilder<String>(
                       future: _getUserEmail(otherId),
                       builder: (context, emailSnapshot) {
-                        final email = emailSnapshot.data ?? "...";
+                        if (!emailSnapshot.hasData) {
+                          return const SizedBox();
+                        }
+
+                        final email = emailSnapshot.data!;
+                        final namePart =
+                            email.split('@')[0].toLowerCase();
+
+                        // 🔥 SEARCH FILTER
+                        if (searchQuery.isNotEmpty &&
+                            !namePart.contains(searchQuery)) {
+                          return const SizedBox();
+                        }
 
                         return ListTile(
-                          contentPadding: const EdgeInsets.symmetric(
-                            vertical: 8,
-                          ),
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 8),
                           leading: ClipRRect(
                             borderRadius: BorderRadius.circular(12),
                             child: Image.network(
-                              'https://i.pravatar.cc/150?u=$otherId', // Placeholder avatar
+                              'https://i.pravatar.cc/150?u=$otherId',
                               width: 50,
                               height: 50,
                               fit: BoxFit.cover,
                             ),
                           ),
                           title: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment:
+                                MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                email.split('@')[0], // Shows name part
+                                namePart,
                                 style: const TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
@@ -217,7 +254,8 @@ class _ChatListState extends State<ChatList> {
                             ],
                           ),
                           subtitle: Padding(
-                            padding: const EdgeInsets.only(top: 4.0),
+                            padding:
+                                const EdgeInsets.only(top: 4.0),
                             child: Text(
                               latestMessage,
                               maxLines: 1,
