@@ -21,7 +21,7 @@ list of the users
 13:           --- NASMA DIZAYE --- 2274
 14: japan6   ---NAZAKIA JAPAN --2164
 15:sinchimba   --- SAIDI JUMA ---2127
-16:omarychimba           ---OMARY ABDALA --2345
+16:omarychimbanga           ---OMARY ABDALLAH --2345
 
 ## Getting Started
 
@@ -63,6 +63,7 @@ samples, guidance on mobile development, and a full API reference.
 <img width="1909" height="975" alt="image" src="https://github.com/user-attachments/assets/a008aa42-a178-46a8-8b96-875571c8f673" />
 
 <img width="1897" height="950" alt="image" src="https://github.com/user-attachments/assets/1d76b661-1d24-4e71-b652-8aed4cefd582" />
+
 
 
 
