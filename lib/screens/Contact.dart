@@ -1,8 +1,6 @@
-<<<<<<< HEAD
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'Chatscreen.dart'; 
+import 'package:flutter/material.dart'; 
 
 class Contacts extends StatefulWidget {
   const Contacts({super.key});
@@ -29,7 +27,7 @@ class _ContactsState extends State<Contacts> {
         ),
         centerTitle: true,
         actions: [IconButton(onPressed: () {}, icon: const Icon(Icons.add, color: Colors.white))],
-        backgroundColor: const Color(0xFF4A90E2), // Matching the blue header in image
+        backgroundColor: const Color(0xFF4A90E2),
         elevation: 0,
       ),
       body: StreamBuilder<QuerySnapshot>(
@@ -49,7 +47,6 @@ class _ContactsState extends State<Contacts> {
 
               if (userId == myId) return const SizedBox.shrink();
 
-              // Data mapping with fallbacks
               final name = userData['name'] ?? userData['email']?.split('@')[0] ?? 'User';
               final role = userData['role'] ?? 'Profession';
               final location = userData['location'] ?? 'City, ST';
@@ -61,7 +58,6 @@ class _ContactsState extends State<Contacts> {
                     padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
                     child: Row(
                       children: [
-                        // Avatar with border as seen in UI
                         CircleAvatar(
                           radius: 28,
                           backgroundColor: Colors.grey[200],
@@ -70,7 +66,6 @@ class _ContactsState extends State<Contacts> {
                         ),
                         const SizedBox(width: 15),
                         
-                        // Text Info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +84,6 @@ class _ContactsState extends State<Contacts> {
                           ),
                         ),
 
-                        // Rounded Icon Buttons
                         _buildActionIcon(Icons.phone),
                         _buildActionIcon(Icons.chat_bubble_outline),
                         _buildActionIcon(Icons.email_outlined),
@@ -117,80 +111,4 @@ class _ContactsState extends State<Contacts> {
       child: Icon(icon, size: 16, color: Colors.grey[400]),
     );
   }
-=======
-import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-
-import 'Chatscreen.dart'; // Assuming this is your chat screen
-
-class Contacts extends StatefulWidget {
-  const Contacts ({super.key});
-
-  @override
-  State<Contacts> createState() => _ContactsState();
-}
-
-class _ContactsState extends State<Contacts> {
-  final _firestore = FirebaseFirestore.instance;
-  final _auth = FirebaseAuth.instance;
-
-  String get myId => _auth.currentUser!.uid;
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text("Contacts")),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: _firestore.collection('users').snapshots(),
-        builder: (context, snapshot) {
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          final users = snapshot.data!.docs;
-
-          if (users.isEmpty) {
-            return const Center(child: Text("No users found"));
-          }
-
-          return ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (context, index) {
-              final user = users[index];
-              final userId = user.id;
-              final email = user['email'];
-
-              // 🚫 Don't show yourself
-              if (userId == myId) {
-                return const SizedBox.shrink();
-              }
-
-              return ListTile(
-                leading: const CircleAvatar(
-                  child: Icon(Icons.person),
-                ),
-                title: Text(email),
-                onTap: () 
-                {
-                  // Navigate to ChatScreen with selected contact
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        otherUserId: userId,
-                        otherUserEmail: email,
-                        isNewChat: false,
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          );
-        },
-      ),
-    );
-  }
->>>>>>> Kimelejoe
 }
